@@ -7,6 +7,7 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "migrate": "ts-node src/migrations/runner.ts",
     "lint": "eslint src/**/*.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,8 +22,8 @@
   },
   "homepage": "https://github.com/pikkuruusu/vitals#readme",
   "dependencies": {
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "kysely": "^0.28.14",
     "pg": "^8.20.0"
   },
   "devDependencies": {
@@ -32,7 +33,6 @@
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^10.1.0",
-    "kysely-codegen": "^0.20.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

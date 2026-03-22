@@ -1,35 +1,58 @@
-import { FileMigrationProvider, Migrator } from "kysely";
-import { db } from "../db";
+import 'dotenv/config'
+
+import { pool } from "../db";
 import { promises as fs } from "fs";
 import path from "path";
 
-const migrator = new Migrator({
-  db,
-  provider: new FileMigrationProvider({
-    fs,
-    path,
-    migrationFolder: path.join(__dirname, "../../../migrations")
-  }),
-});
+async function runMigrations() {
+  const client = await pool.connect();
 
-export async function migrateToLatest() {
-  const { error, results } = await migrator.migrateToLatest();
+  try {
+    await client.query(`
+      create table if not exists migrations (
+        name text primary key,
+        ran_at timestamptz default now() not null
+      )
+    `)
 
-  results?.forEach(r => {
-    if (r.status === "Success") {
-      console.log(`Migration ${r.migrationName} ran successfully.`);
-    } else if (r.status === "Error") {
-      console.error(`Migration ${r.migrationName} failed`);
+    const migrationsDir = path.join(__dirname, '../../../migrations')
+    const files = await fs.readdir(migrationsDir)
+    const sqlFiles = files
+      .filter(f => f.endsWith('.sql'))
+      .sort()
+
+    for (const file of sqlFiles) {
+      const result = await client.query(
+        'select name from migrations where name = $1',
+        [file]
+      )
+
+      if (result.rows.length > 0) {
+        console.log(`Skipping ${file}`)
+        continue
+      }
+
+      const filePath = path.join(migrationsDir, file)
+      const sql = await fs.readFile(filePath, 'utf-8')
+
+      await client.query('begin')
+      await client.query(sql)
+      await client.query(
+        'insert into migrations (name) values ($1)',
+        [file]
+      )
+      await client.query('commit')
+
+      console.log(`Ran migration: ${file}`)
     }
-  });
-
-  if (error) {
-    console.error("Migration failed with error:", error);
-    process.exit(1);
+  } catch (error) {
+    await client.query('rollback')
+    console.error('Migration failed:', error)
+    process.exit(1)
+  } finally {
+    client.release()
+    await pool.end()
   }
-
-  await db.destroy();
-
 }
 
-migrateToLatest();
+runMigrations()
