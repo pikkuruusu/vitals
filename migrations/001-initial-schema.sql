@@ -32,7 +32,7 @@ create table entries (
   comment text,
   noted_at timestamptz not null,
   created_at timestamptz default now() not null
-)
+);
 
 -- Goals
 create table goals (
