@@ -1,0 +1,41 @@
+{
+  "name": "vitals-api",
+  "version": "1.0.0",
+  "description": "Backend for Vitals project",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "migrate": "ts-node src/migrations/runner.ts",
+    "lint": "eslint src/**/*.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pikkuruusu/vitals.git"
+  },
+  "author": "Staffan Småros",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pikkuruusu/vitals/issues"
+  },
+  "homepage": "https://github.com/pikkuruusu/vitals#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jose": "^6.2.2",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@types/pg": "^8.20.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^10.1.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
