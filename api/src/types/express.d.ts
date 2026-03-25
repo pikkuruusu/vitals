@@ -1,9 +1,9 @@
-import { JWTPayload } from 'jose'
-
 declare global {
   namespace Express {
     interface Request {
-      user?: JWTPayload
+      user?: import('jose').JWTPayload
     }
   }
 }
+
+export {}
