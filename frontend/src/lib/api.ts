@@ -8,7 +8,7 @@ async function getAuthHeader() {
   return session ? `Bearer ${session.access_token}` : null
 }
 
-export async function apiFetch(path: string, options: RequestIniit = {}) {
+export async function apiFetch(path: string, options: RequestInit = {}) {
   const authHeader = await getAuthHeader()
 
   if (!authHeader) {
