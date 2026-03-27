@@ -16,10 +16,11 @@ export function createSupabaseServerClient(request: Request, response: Response)
       cookies: {
         getAll() {
           return parseCookieHeader(request.headers.get('cookie') ?? '')
+            .map(({ name, value }) => ({ name, value: value ?? '' }))
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-          response.headers.append('set-cookie', serializeCookieHeader(name, value, options))
+            response.headers.append('set-cookie', serializeCookieHeader(name, value, options))
           )
         }
       }
