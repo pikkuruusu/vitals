@@ -9,10 +9,12 @@
   import { afterNavigate } from '$app/navigation'
   import { page } from '$app/stores'
   import auth from '$lib/auth.svelte'
+  import { Toast } from '@skeletonlabs/skeleton-svelte'
+  import { toaster } from '$lib/toaster'
 
   const supabase = createSupabaseBrowserClient();
 
-  let { data, children } = $props()
+  let { data, children: pageChildren } = $props()
 
   $effect(() => {
     auth.authenticated = (!!data.session)
@@ -30,7 +32,6 @@
   })
 
   afterNavigate(async () => {
-    console.log(performance.now(), 'Checking authentication status after navigation to', $page.url.pathname)
     const { data: { session } } = await supabase.auth.getSession();
     if (!session && $page.url.pathname !== '/login') {
       auth.authenticated = false
@@ -66,7 +67,18 @@
   </header>
   <main class="overflow-y-auto p-4">
     {#if auth.authenticated || $page.url.pathname === '/login'}
-      {@render children()}
+      {@render pageChildren()}
     {/if}
+    <Toast.Group {toaster}>
+      {#snippet children(toast)}
+        <Toast toast={toast}>
+          <Toast.Message>
+          <Toast.Title>{toast.title}</Toast.Title>
+          <Toast.Description>{toast.description}</Toast.Description>
+          </Toast.Message>
+          <Toast.CloseTrigger />
+        </Toast>
+      {/snippet}
+    </Toast.Group>
   </main>
 </div>

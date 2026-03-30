@@ -3,6 +3,7 @@
   import { onMount } from 'svelte'
   import { DatePicker, parseDate, Portal } from '@skeletonlabs/skeleton-svelte';
   import auth from '$lib/auth.svelte'
+  import { toaster } from '$lib/toaster'
 
   let weightValue = $state('')
   let comment = $state('')
@@ -11,11 +12,19 @@
   let metricId = $state('')
   let error = $state('')
 
+  function showError(description: string) {
+    toaster.error({
+      title: 'Error',
+      description,
+      duration:5000,
+      closable:true
+    })
+  }
+
   onMount(async () => {
     if (!auth.authenticated) {
       return
     }
-    console.log(performance.now(), 'Fetching metrics...')
     try {
       const metrics = await apiFetch('/api/metrics')
       const weightMetric = metrics.find((metric) => metric.name === 'weight')
@@ -37,14 +46,17 @@
     const floatWeight = parseFloat(weightValue)
     if (isNaN(floatWeight)) {
       error = 'Please enter a number for weight'
+      showError(error)
       return
     } else if (floatWeight <= 0 || floatWeight > 500) {
       error = 'Please enter a weight value between 0 and 500 kg'
+      showError(error)
       return
     }
 
     if (!metricId) {
       error = 'Weight metric not found. Please try again later.'
+      showError(error)
       return
     }
 
@@ -54,7 +66,7 @@
       metricId,
       value: floatWeight,
       comment,
-      notedAt: new Date(notedAt).toISOString()
+      notedAt: notedAt[0]?.toString()
     }
 
     try {
@@ -62,9 +74,16 @@
         method: 'POST',
         body: JSON.stringify(requestBody)
       })
+      toaster.info({
+        title: 'Weight tracked',
+        description: `Your weight of ${floatWeight} kg has been logged successfully.`,
+        duration: 5000,
+        closable: false
+      })
     } catch (err) {
       console.error('Failed to submit weight entry:', err)
       error = 'Failed to submit weight entry. Please try again.'
+      showError(error)
     } finally {
       loading = false
       weightValue = ''
@@ -93,7 +112,7 @@
     />
     <DatePicker locale = "en-UK" {notedAt} onValueChange={(e) => (notedAt = e.value)}>
       <DatePicker.Control>
-        <DatePicker.Input placeholder="dd/mm/yyyy" />
+        <DatePicker.Input placeholder={parseDate(new Date())} />
         <DatePicker.Trigger />
       </DatePicker.Control>
       <Portal>
@@ -188,10 +207,6 @@
         </DatePicker.Positioner>
       </Portal>
     </DatePicker>
-
-    {#if error}
-      <p class="text-error-500">{error}</p>
-    {/if}
 
     <button
       class="btn preset-filled"
