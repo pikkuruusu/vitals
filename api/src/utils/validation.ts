@@ -15,4 +15,8 @@ function validateDate(dateString: string): boolean {
   return true
 }
 
-export { validateDate }
+function validateNumber(value: unknown): boolean {
+  return typeof value === 'number' && !isNaN(value)
+}
+
+export { validateDate, validateNumber }
