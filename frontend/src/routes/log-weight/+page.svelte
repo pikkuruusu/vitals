@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { apiFetch } from '$lib/api'
+  import { apiFetch, ApiError } from '$lib/api'
   import { onMount } from 'svelte'
   import { DatePicker, parseDate, Portal } from '@skeletonlabs/skeleton-svelte';
   import auth from '$lib/auth.svelte'
-  import { toaster } from '$lib/toaster'
+  import { showToast } from '$lib/toaster'
+  import type { Metric } from '$lib/types'
 
   let weightValue = $state('')
   let comment = $state('')
@@ -12,21 +13,14 @@
   let metricId = $state('')
   let error = $state('')
 
-  function showError(description: string) {
-    toaster.error({
-      title: 'Error',
-      description,
-      duration:5000,
-      closable:true
-    })
-  }
+  const today = new Date().toISOString().split('T')[0]
 
   onMount(async () => {
     if (!auth.authenticated) {
       return
     }
     try {
-      const metrics = await apiFetch('/api/metrics')
+      const metrics = await apiFetch('/api/metrics') as Metric[]
       const weightMetric = metrics.find((metric) => metric.name === 'weight')
       if (weightMetric) {
         metricId = weightMetric.id
@@ -46,17 +40,17 @@
     const floatWeight = parseFloat(weightValue)
     if (isNaN(floatWeight)) {
       error = 'Please enter a number for weight'
-      showError(error)
+      showToast(error, 'error')
       return
     } else if (floatWeight <= 0 || floatWeight > 500) {
       error = 'Please enter a weight value between 0 and 500 kg'
-      showError(error)
+      showToast(error, 'error')
       return
     }
 
     if (!metricId) {
       error = 'Weight metric not found. Please try again later.'
-      showError(error)
+      showToast(error, 'error')
       return
     }
 
@@ -74,16 +68,16 @@
         method: 'POST',
         body: JSON.stringify(requestBody)
       })
-      toaster.info({
-        title: 'Weight tracked',
-        description: `Your weight of ${floatWeight} kg has been logged successfully.`,
-        duration: 5000,
-        closable: false
-      })
-    } catch (err) {
+      showToast(`Your weight of ${floatWeight} kg has been logged successfully.`, 'success')
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 409) {
+        error = 'An entry for this date already exists. Please choose a different date or update the existing entry.'
+        showToast(error, 'warning')
+        return
+      }
       console.error('Failed to submit weight entry:', err)
       error = 'Failed to submit weight entry. Please try again.'
-      showError(error)
+      showToast(error, 'error')
     } finally {
       loading = false
       weightValue = ''
@@ -110,9 +104,9 @@
       placeholder="Comment"
       bind:value={comment}
     />
-    <DatePicker locale = "en-UK" {notedAt} onValueChange={(e) => (notedAt = e.value)}>
+    <DatePicker locale = "en-UK" value={notedAt} onValueChange={(e) => (notedAt = e.value)}>
       <DatePicker.Control>
-        <DatePicker.Input placeholder={parseDate(new Date())} />
+        <DatePicker.Input placeholder={today} />
         <DatePicker.Trigger />
       </DatePicker.Control>
       <Portal>

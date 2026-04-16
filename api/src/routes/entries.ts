@@ -95,6 +95,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Value is not a valid number' })
     }
 
+    const entryOnDateResult = await pool.query(
+      `select * from entries where user_id = $1 and metric_id = $2 and noted_at::date = $3::date`,
+      [userId, metricId, notedAt]
+    )
+
+    if (entryOnDateResult.rows.length > 0) {
+      return res.status(409).json({ error: 'Entry for this metric already exists on the specified date' })
+    }
+
     const result = await pool.query<Entry>(
       `insert into entries (user_id, metric_id, value, comment, noted_at)
       values ($1, $2, $3, $4, $5)
@@ -158,6 +167,27 @@ router.put('/:id', async (req, res) => {
     }
 
     res.status(200).json(result.rows[0])
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const userId = req.user?.sub;
+    const entryId = req.params.id;
+
+    const result = await pool.query(
+      `delete from entries where id = $1 and user_id = $2 returning *`,
+      [entryId, userId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' })
+    }
+
+    res.status(204).send()
   } catch (error) {
     console.error(error)
     res.status(500).json({ error: 'Internal server error' })
